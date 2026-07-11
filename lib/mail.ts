@@ -23,6 +23,26 @@ export async function sendMail(to: string, subject: string, html: string) {
   }
 }
 
+// Authentication emails
+export const sendVerificationCode = (to: string, name: string, code: string) => {
+  const html = layout(
+    "Verify your email address",
+    `Hi <b>${name}</b>,<br/><br/>
+    Thank you for signing up for <b>${process.env.NEXT_PUBLIC_APP_NAME ?? "EduPlay"}</b>!<br/><br/>
+    Please use the following 6-digit verification code to complete your registration:
+    <div style="background:#ECECFE;padding:20px;border-radius:10px;font-size:28px;font-weight:bold;letter-spacing:6px;text-align:center;color:#7F77DD;margin:20px auto;max-width:240px;border:1px solid #7F77DD;">
+      ${code}
+    </div>
+    This code is valid for <b>10 minutes</b>. If you did not request this code, please ignore this email.<br/><br/>
+    Welcome aboard!`
+  );
+
+  // Fallback logs to print verification code in terminal (extremely useful for dev testing)
+  console.log(`\n==========================================\n[MAIL FALLBACK] Verification Code for ${to}: ${code}\n==========================================\n`);
+
+  return sendMail(to, "Verify your email address", html);
+};
+
 // Student emails
 export const sendWelcomeStudent = (to: string, name: string) =>
   sendMail(to, "Welcome to your learning journey!", layout(`Welcome, ${name}!`, `You are all set. Play your first game today to start your streak and earn XP.`));

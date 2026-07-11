@@ -1,12 +1,14 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { Label, FieldError } from "@/components/ui/label";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { Eye } from "lucide-react";
 
 const GAME_TYPES = [
   { key: "FLASHCARD", label: "Flashcard", emoji: "🃏" },
@@ -73,6 +75,11 @@ export function GameBuilder({ sets, initial }: Props) {
       <div className="flex flex-wrap gap-3 items-end">
         <div className="flex-1 min-w-[220px]"><Label>Game title</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Fruit vocabulary quiz" /><FieldError message={error} /></div>
         <Button onClick={save} disabled={saving}>{saving ? "Saving..." : initial ? "Save" : "Create game"}</Button>
+        {initial && (
+          <Link href={`/dashboard/games/${initial.id}/preview`}>
+            <Button variant="outline" type="button"><Eye className="h-4 w-4 mr-1" /> Try Game</Button>
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_260px] gap-4">

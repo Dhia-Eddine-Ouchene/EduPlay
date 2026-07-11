@@ -18,6 +18,12 @@ export const authOptions: NextAuthOptions = {
         if (!user?.password) return null;
         const valid = await compare(credentials.password, user.password);
         if (!valid) return null;
+        
+        // If the email is not verified, throw a distinct error to handle in frontend
+        if (!user.isVerified) {
+          throw new Error("UNVERIFIED");
+        }
+        
         return { id: user.id, email: user.email, name: user.name, image: user.avatar, role: user.role };
       },
     }),
@@ -37,11 +43,18 @@ export const authOptions: NextAuthOptions = {
               name: user.name ?? "User",
               avatar: user.image,
               role: "EDUCATOR",
+              isVerified: true,
               educatorProfile: { create: { creatorType: "Teacher" } },
             },
           });
           user.id = created.id;
         } else {
+          if (!existing.isVerified) {
+            await prisma.user.update({
+              where: { id: existing.id },
+              data: { isVerified: true },
+            });
+          }
           user.id = existing.id;
         }
       }

@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "@/components/ui/toast";
+import { Eye } from "lucide-react";
 import { FlashcardGame } from "./FlashcardGame";
 import { FillBlankGame } from "./FillBlankGame";
 import { DragDropGame } from "./DragDropGame";
@@ -27,8 +28,9 @@ const GAMES = {
 
 type Result = { xpEarned: number; totalXP: number; level: number; leveledUp: boolean; streak: number; newBadges: string[] };
 
-export function GamePlayer({ gameId, title, type, items, settings }: {
+export function GamePlayer({ gameId, title, type, items, settings, previewMode = false }: {
   gameId: string; title: string; type: keyof typeof GAMES; items: GameItem[]; settings: GameSettings;
+  previewMode?: boolean;
 }) {
   const [result, setResult] = useState<(Result & { score: number; timeTaken: number }) | null>(null);
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -39,6 +41,13 @@ export function GamePlayer({ gameId, title, type, items, settings }: {
   const onComplete = async (correct: number, total: number) => {
     const timeTaken = Math.round((Date.now() - startRef.current) / 1000);
     const score = Math.round((correct / Math.max(total, 1)) * 100);
+
+    // Preview mode: show results locally without saving anything
+    if (previewMode) {
+      setResult({ score, timeTaken, xpEarned: 0, totalXP: 0, level: 0, leveledUp: false, streak: 0, newBadges: [] });
+      return;
+    }
+
     try {
       const res = await fetch(`/api/games/${gameId}/play`, {
         method: "POST",
@@ -71,6 +80,12 @@ export function GamePlayer({ gameId, title, type, items, settings }: {
 
   return (
     <motion.div key={round + (result ? "-r" : "")} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="py-6">
+      {previewMode && (
+        <div className="flex items-center justify-center gap-2 mb-4 px-4 py-2.5 rounded-card bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
+          <Eye className="h-4 w-4" />
+          Preview Mode — results will not be saved
+        </div>
+      )}
       <h1 className="font-heading font-bold text-xl text-center mb-6">{title}</h1>
       {result ? (
         <>

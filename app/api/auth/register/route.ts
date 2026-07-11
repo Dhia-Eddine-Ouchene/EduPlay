@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { sendWelcomeEducator, sendWelcomeStudent } from "@/lib/mail";
+import { sendVerificationCode } from "@/lib/mail";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -25,20 +25,27 @@ export async function POST(req: Request) {
     const hashed = await hash(password, 12);
     const isStudent = creatorType === "Student";
 
+    // Generate 6-digit OTP code and expiry (10 minutes)
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000);
+
     const user = await prisma.user.create({
       data: {
         name,
         email: email.toLowerCase(),
         password: hashed,
         role: isStudent ? "STUDENT" : "EDUCATOR",
+        isVerified: false,
+        verificationCode,
+        verificationCodeExpires,
         ...(isStudent ? {} : { educatorProfile: { create: { creatorType } } }),
       },
     });
 
-    if (isStudent) void sendWelcomeStudent(user.email, user.name);
-    else void sendWelcomeEducator(user.email, user.name);
+    // Send verification code
+    await sendVerificationCode(user.email, user.name, verificationCode);
 
-    return NextResponse.json({ id: user.id }, { status: 201 });
+    return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
   } catch (err) {
     console.error("[register]", err);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
